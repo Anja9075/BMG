@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lipide – QR-Quiz</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f3f6fb;color:#172033;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.card{width:min(680px,100%);background:white;border-radius:22px;padding:30px;box-shadow:0 10px 35px rgba(0,0,0,.12)}
+.badge{display:inline-block;background:#e8eefc;padding:7px 12px;border-radius:999px;font-size:14px}
+h1{margin:14px 0 8px;font-size:28px}
+#question{font-size:21px;line-height:1.4;margin:25px 0}
+.option{width:100%;padding:15px;margin:10px 0;border:2px solid #d9dfeb;background:white;border-radius:13px;text-align:left;font-size:16px;cursor:pointer}
+.option:hover{background:#f6f8fc}
+.option:disabled{cursor:default}
+.correct{border-color:#32a852!important;background:#eaf8ee!important}
+.wrong{border-color:#d93025!important;background:#fff0ef!important}
+#result{display:none;margin-top:18px;padding:16px;border-radius:13px;line-height:1.45}
+#result.ok{display:block;background:#eaf8ee;color:#17652b}
+#result.bad{display:block;background:#fff0ef;color:#8b1e17}
+button.next{display:none;margin-top:18px;padding:13px 20px;border:0;border-radius:12px;background:#172033;color:white;font-size:16px;cursor:pointer}
+.progress{font-size:14px;color:#687286}
+</style>
+</head>
+<body>
+<div class="card">
+  <span class="badge">🧪 Lipide – QR-Quiz</span>
+  <div class="progress" id="progress"></div>
+  <h1 id="title">Frage</h1>
+  <div id="question"></div>
+  <div id="options"></div>
+  <div id="result"></div>
+  <button class="next" id="next" onclick="nextQuestion()">Nächste Frage →</button>
+</div>
+<script>
+const questions = [{"id": 1, "question": "Welche Aufgabe haben Lipide im Körper besonders?", "options": ["Energiespeicherung", "Sauerstofftransport", "Bildung von DNA"], "correct": 0, "explanation": "Lipide können langfristig Energie speichern."}, {"id": 2, "question": "Welche Lipide bilden einen wichtigen Bestandteil der Zellmembran?", "options": ["Triglyceride", "Phospholipide", "Cholesterinester"], "correct": 1, "explanation": "Phospholipide bilden die grundlegende Doppelschicht der Zellmembran."}, {"id": 3, "question": "Aus welchen Bausteinen besteht ein Triglycerid?", "options": ["Glycerin und drei Fettsäuren", "Glucose und drei Aminosäuren", "Glycerin und drei Aminosäuren"], "correct": 0, "explanation": "Ein Triglycerid besteht aus einem Glycerinmolekül und drei Fettsäuren."}, {"id": 4, "question": "Was ist typisch für gesättigte Fettsäuren?", "options": ["Sie besitzen keine C=C-Doppelbindung", "Sie besitzen immer drei Doppelbindungen", "Sie enthalten keinen Kohlenstoff"], "correct": 0, "explanation": "Gesättigte Fettsäuren besitzen keine Kohlenstoff-Kohlenstoff-Doppelbindungen."}, {"id": 5, "question": "Was ist typisch für ungesättigte Fettsäuren?", "options": ["Sie besitzen mindestens eine C=C-Doppelbindung", "Sie bestehen nur aus Sauerstoff", "Sie enthalten kein Wasserstoff"], "correct": 0, "explanation": "Ungesättigte Fettsäuren besitzen mindestens eine C=C-Doppelbindung."}, {"id": 6, "question": "Welches Vitamin gehört zu den fettlöslichen Vitaminen?", "options": ["Vitamin C", "Vitamin B12", "Vitamin D"], "correct": 2, "explanation": "Zu den fettlöslichen Vitaminen gehören A, D, E und K."}, {"id": 7, "question": "Was bedeutet amphiphil bei einem Phospholipid?", "options": ["Es besitzt einen hydrophilen und einen hydrophoben Bereich", "Es löst sich nur in Wasser", "Es besteht nur aus Fettsäuren"], "correct": 0, "explanation": "Phospholipide besitzen einen wasserliebenden Kopf und wasserabweisende Fettsäureschwänze."}, {"id": 8, "question": "Welche Funktion hat Cholesterin unter anderem?", "options": ["Es ist Bestandteil von Zellmembranen", "Es transportiert Sauerstoff im Blut", "Es ist ein Bestandteil der DNA"], "correct": 0, "explanation": "Cholesterin ist unter anderem Bestandteil von Zellmembranen und Ausgangsstoff für bestimmte Hormone."}, {"id": 9, "question": "Was entsteht bei der Verseifung von Fetten?", "options": ["Glycerin und Fettsäuresalze", "Glucose und Aminosäuren", "DNA und RNA"], "correct": 0, "explanation": "Bei der Verseifung werden Fette zu Glycerin und Salzen der Fettsäuren umgesetzt."}, {"id": 10, "question": "Warum sind Lipide als Energiespeicher geeignet?", "options": ["Sie liefern viel Energie pro Gramm und sind platzsparend speicherbar", "Sie bestehen aus Wasser", "Sie enthalten keine chemische Energie"], "correct": 0, "explanation": "Fette liefern etwa 9 kcal pro Gramm und sind daher sehr energiereiche Speicherstoffe."}];
+let current = 1;
+let answered = false;
+
+function getQuestionNumber() {
+  const m = location.hash.match(/q=(\d+)/);
+  let n = m ? parseInt(m[1]) : 1;
+  if (n < 1 || n > questions.length) n = 1;
+  return n;
+}
+
+function render() {
+  current = getQuestionNumber();
+  const item = questions[current-1];
+  answered = false;
+  document.getElementById('progress').textContent = `Frage ${current} von ${questions.length}`;
+  document.getElementById('title').textContent = `Frage ${current}`;
+  document.getElementById('question').textContent = item.question;
+  const box = document.getElementById('options');
+  box.innerHTML = '';
+  item.options.forEach((option, i) => {
+    const b = document.createElement('button');
+    b.className = 'option';
+    b.textContent = String.fromCharCode(65+i) + ') ' + option;
+    b.onclick = () => answer(i, b);
+    box.appendChild(b);
+  });
+  const r = document.getElementById('result');
+  r.className = '';
+  r.style.display = 'none';
+  r.innerHTML = '';
+  document.getElementById('next').style.display = 'none';
+}
+
+function answer(index, clicked) {
+  if (answered) return;
+  answered = true;
+  const item = questions[current-1];
+  document.querySelectorAll('.option').forEach((b,i) => {
+    b.disabled = true;
+    if (i === item.correct) b.classList.add('correct');
+  });
+  const r = document.getElementById('result');
+  r.style.display = 'block';
+  if (index === item.correct) {
+    clicked.classList.add('correct');
+    r.className = 'ok';
+    r.innerHTML = '<strong>✅ Richtig!</strong><br>' + item.explanation;
+  } else {
+    clicked.classList.add('wrong');
+    r.className = 'bad';
+    r.innerHTML = '<strong>❌ Falsch!</strong><br>Richtig wäre: <strong>' +
+      String.fromCharCode(65+item.correct) + ') ' + item.options[item.correct] +
+      '</strong><br>' + item.explanation;
+  }
+  if (current < questions.length) document.getElementById('next').style.display = 'inline-block';
+  else document.getElementById('next').style.display = 'inline-block';
+}
+
+function nextQuestion() {
+  if (current < questions.length) {
+    location.hash = 'q=' + (current + 1);
+  } else {
+    location.hash = 'q=1';
+  }
+  render();
+  window.scrollTo(0,0);
+}
+window.addEventListener('hashchange', render);
+render();
+</script>
+</body>
+</html>
